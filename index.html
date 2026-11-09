@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Angkasa Ceria - Game Edukasi Anak</title>
+    <!-- Tailwind CSS for vibrant, modern layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Poppins for clean, child-friendly typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for playful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti library for winning celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+        }
+        .star-bg {
+            background: radial-gradient(circle at center, #1b1b3a 0%, #0a0a1f 100%);
+        }
+        /* Floating animation for map nodes and decorative elements */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.9); }
+        }
+        .active-node {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="star-bg min-h-screen text-white flex flex-col justify-between overflow-x-hidden">
+
+    <header class="w-full py-4 px-6 bg-indigo-950/80 backdrop-blur-md border-b border-indigo-800 flex justify-between items-center shadow-lg z-20">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-gradient-to-tr from-yellow-400 to-pink-500 rounded-2xl flex items-center justify-center shadow-md transform rotate-6 animate-pulse">
+                <i class="fa-solid fa-rocket text-2xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-black bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
+                    Petualangan Angkasa Ceria
+                </h1>
+                <p class="text-xs text-indigo-300">Jelajahi Tata Surya & Belajar Sambil Bermain!</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 bg-indigo-900/80 px-4 py-2 rounded-full border border-indigo-700 shadow-inner">
+                <i class="fa-solid fa-star text-yellow-400 text-lg animate-bounce"></i>
+                <span id="scoreDisplay" class="font-extrabold text-yellow-300 text-lg">0</span>
+                <span class="text-xs text-indigo-300">Bintang</span>
+            </div>
+            <button onclick="resetGame()" class="bg-rose-600 hover:bg-rose-500 text-white p-2.5 rounded-xl shadow-lg transition transform hover:scale-105" title="Mulai Ulang">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center items-center relative z-10">
+
+        <!-- WELCOME SCREEN -->
+        <div id="welcomeScreen" class="w-full bg-gradient-to-b from-indigo-900/90 to-purple-900/90 backdrop-blur-xl p-8 rounded-3xl border-4 border-cyan-400/50 shadow-2xl text-center space-y-6">
+            <div class="inline-block p-4 bg-cyan-500/20 rounded-full border-2 border-cyan-300 animate-float">
+                <i class="fa-solid fa-space-shuttle text-6xl text-cyan-300 transform -rotate-45"></i>
+            </div>
+            <h2 class="text-3xl md:text-4xl font-extrabold text-yellow-300">Halo, Calon Astronot Cilik! 🚀</h2>
+            <p class="text-indigo-200 text-base md:text-lg max-w-xl mx-auto">
+                Siap menjelajahi galaksi yang penuh warna? Selesaikan misi di setiap planet, kumpulkan bintang sebanyak-banyaknya, dan jadilah penjelajah luar angkasa terhebat!
+            </p>
+            <button onclick="startGame()" class="px-8 py-4 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-300 hover:to-cyan-400 text-indigo-950 font-black text-xl rounded-2xl shadow-xl transform transition hover:scale-110 active:scale-95 border-b-4 border-emerald-700">
+                Mulai Petualangan! ✨
+            </button>
+        </div>
+
+        <!-- MAP SCREEN (Step by Step Exploration) -->
+        <div id="mapScreen" class="w-full hidden space-y-6">
+            <div class="text-center space-y-2">
+                <h3 class="text-2xl md:text-3xl font-black text-pink-400">Peta Galaksi Bintang</h3>
+                <p class="text-sm text-indigo-300">Pilih planet tujuanmu berikutnya untuk melakukan misi!</p>
+            </div>
+
+            <!-- Planets Journey Path Container -->
+            <div id="planetMapContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 md:gap-6 py-6">
+                <!-- Planet nodes will be generated dynamically by JavaScript -->
+            </div>
+        </div>
+
+        <!-- QUIZ / MISSION SCREEN -->
+        <div id="quizScreen" class="w-full hidden bg-gradient-to-b from-purple-900/95 to-indigo-950/95 backdrop-blur-xl p-6 md:p-8 rounded-3xl border-4 border-pink-500/60 shadow-2xl space-y-6 relative">
+            <div class="flex justify-between items-center border-b border-indigo-700 pb-4">
+                <div class="flex items-center space-x-3">
+                    <span id="quizPlanetIcon" class="text-3xl">🪐</span>
+                    <div>
+                        <h4 id="quizPlanetTitle" class="text-xl font-extrabold text-yellow-300">Misi Planet</h4>
+                        <p id="quizStepIndicator" class="text-xs text-indigo-300">Pertanyaan 1 dari 2</p>
+                    </div>
+                </div>
+                <button onclick="backToMap()" class="bg-indigo-800/80 hover:bg-indigo-700 text-indigo-200 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Peta
+                </button>
+            </div>
+
+            <div class="bg-indigo-950/70 p-6 rounded-2xl border border-indigo-800 text-center space-y-4">
+                <p id="quizQuestion" class="text-lg md:text-xl font-bold text-white leading-relaxed">
+                    Pertanyaan misi akan muncul di sini...
+                </p>
+            </div>
+
+            <!-- Answer Options Grid -->
+            <div id="quizOptions" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Options generated dynamically -->
+            </div>
+        </div>
+
+        <!-- LEVEL COMPLETE / VICTORY SCREEN -->
+        <div id="victoryScreen" class="w-full hidden bg-gradient-to-b from-yellow-600/95 to-amber-900/95 backdrop-blur-xl p-8 rounded-3xl border-4 border-yellow-300 shadow-2xl text-center space-y-6">
+            <div class="inline-block p-4 bg-yellow-400/20 rounded-full border-2 border-yellow-200 animate-bounce">
+                <i class="fa-solid fa-trophy text-6xl text-yellow-300"></i>
+            </div>
+            <h3 class="text-3xl md:text-4xl font-black text-yellow-200">Misi Selesai, Luar Biasa! 🎉</h3>
+            <p id="victoryMessage" class="text-yellow-100 text-base md:text-lg max-w-lg mx-auto">
+                Kamu berhasil menjelajahi seluruh tata surya dan mengumpulkan banyak bintang! Kamu adalah Astronot Sejati!
+            </p>
+            <div class="bg-black/30 p-4 rounded-2xl max-w-xs mx-auto border border-yellow-500/40">
+                <span class="text-sm text-yellow-200">Total Bintang Dikumpulkan:</span>
+                <div id="finalScore" class="text-4xl font-black text-yellow-300 mt-1">0</div>
+            </div>
+            <button onclick="resetGame()" class="px-8 py-4 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-black text-xl rounded-2xl shadow-xl transform transition hover:scale-110 active:scale-95 border-b-4 border-pink-800">
+                Main Lagi Dari Awal 🌟
+            </button>
+        </div>
+
+    </main>
+
+    <div id="feedbackModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div id="feedbackCard" class="bg-indigo-900 border-4 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl transform transition scale-95">
+            <div id="feedbackIcon" class="text-5xl">🌟</div>
+            <h4 id="feedbackTitle" class="text-2xl font-black text-white">Hebat!</h4>
+            <p id="feedbackText" class="text-indigo-200 text-sm">Jawabanmu benar sekali!</p>
+            <button onclick="closeFeedback()" class="w-full py-3 bg-gradient-to-r from-cyan-400 to-blue-500 text-indigo-950 font-black rounded-xl shadow-lg hover:brightness-110 transition">
+                Lanjut Petualangan 🚀
+            </button>
+        </div>
+    </div>
+
+    <footer class="w-full py-3 text-center text-xs text-indigo-400 border-t border-indigo-900 z-20">
+        Petualangan Angkasa Ceria &bull; Belajar Seru untuk Anak Indonesia 🪐
+    </footer>
+
+    <script>
+        // Game state data
+        let score = 0;
+        let currentPlanetIndex = 0;
+        let currentQuestionIndex = 0;
+
+        // Data for planets and educational mini-quiz steps
+        const planetsData = [
+            {
+                name: "Merkurius",
+                icon: "☄️",
+                color: "from-amber-500 to-orange-600",
+                borderColor: "border-amber-400",
+                description: "Planet terdekat dengan Matahari yang super panas!",
+                questions: [
+                    {
+                        q: "Berapa hasil dari 3 ditambah 2 bintang?",
+                        options: ["4 Bintang", "5 Bintang", "6 Bintang"],
+                        answer: 1
+                    },
+                    {
+                        q: "Planet apakah Merkurius dalam urutan tata surya?",
+                        options: ["Planet Pertama", "Planet Kelima", "Planet Terakhir"],
+                        answer: 0
+                    }
+                ]
+            },
+            {
+                name: "Venus",
+                icon: "✨",
+                color: "from-yellow-400 to-amber-500",
+                borderColor: "border-yellow-300",
+                description: "Planet paling terang di langit malam.",
+                questions: [
+                    {
+                        q: "Jika kamu punya 6 permen roket lalu dimakan 2, sisa berapa?",
+                        options: ["3 Permen", "4 Permen", "5 Permen"],
+                        answer: 1
+                    },
+                    {
+                        q: "Warna apakah yang paling identik dengan kobaran api roket?",
+                        options: ["Merah & Jingga", "Ungu Gelap", "Hijau Tua"],
+                        answer: 0
+                    }
+                ]
+            },
+            {
+                name: "Bumi",
+                icon: "🌍",
+                color: "from-blue-500 to-cyan-500",
+                borderColor: "border-cyan-300",
+                description: "Rumah kita tercinta yang penuh air dan tumbuhan hijau.",
+                questions: [
+                    {
+                        q: "Berapa jumlah kaki pada seekor kucing yang hidup di Bumi?",
+                        options: ["2 Kaki", "4 Kaki", "6 Kaki"],
+                        answer: 1
+                    },
+                    {
+                        q: "Bagian permukaan Bumi yang paling luas ditutupi oleh apa?",
+                        options: ["Gurun Pasir", "Lautan Air", "Kota Gedung"],
+                        answer: 1
+                    }
+                ]
+            },
+            {
+                name: "Mars",
+                icon: "🔴",
+                color: "from-red-500 to-rose-700",
+                borderColor: "border-rose-400",
+                description: "Planet Merah yang terkenal dan penuh misteri.",
+                questions: [
+                    {
+                        q: "Berapa hasil perkalian sederhana: 2 dikali 3?",
+                        options: ["5", "6", "8"],
+                        answer: 1
+                    },
+                    {
+                        q: "Mengapa Mars sering disebut Planet Merah?",
+                        options: ["Karena ada banyak debu besi berkarat", "Karena penuh cat merah", "Karena cuacanya selalu musim panas"],
+                        answer: 0
+                    }
+                ]
+            },
+            {
+                name: "Jupiter",
+                icon: "🪐",
+                color: "from-amber-600 to-yellow-700",
+                borderColor: "border-yellow-500",
+                description: "Planet raksasa terbesar di dalam tata surya kita!",
+                questions: [
+                    {
+                        q: "Jika ada 10 bintang di angkasa lalu 4 jatuh ke Bumi, sisa berapa?",
+                        options: ["5 Bintang", "6 Bintang", "7 Bintang"],
+                        answer: 1
+                    },
+                    {
+                        q: "Jupiter adalah planet yang...",
+                        options: ["Paling kecil", "Paling besar", "Paling dingin"],
+                        answer: 1
+                    }
+                ]
+            }
+        ];
+
+        let unlockedPlanets = 1; // Tracks progress on the map
+
+        // DOM Elements
+        const welcomeScreen = document.getElementById('welcomeScreen');
+        const mapScreen = document.getElementById('mapScreen');
+        const quizScreen = document.getElementById('quizScreen');
+        const victoryScreen = document.getElementById('victoryScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const planetMapContainer = document.getElementById('planetMapContainer');
+
+        function startGame() {
+            welcomeScreen.classList.add('hidden');
+            mapScreen.classList.remove('hidden');
+            renderMap();
+        }
+
+        function renderMap() {
+            planetMapContainer.innerHTML = '';
+            planetsData.forEach((planet, index) => {
+                const isUnlocked = index < unlockedPlanets;
+                const isCompleted = index < currentPlanetIndex;
+                const isActive = index === currentPlanetIndex && index < planetsData.length;
+
+                const card = document.createElement('div');
+                card.className = `relative p-5 rounded-3xl bg-gradient-to-br ${planet.color} border-4 ${planet.borderColor} shadow-xl flex flex-col items-center justify-between text-center transition transform duration-300 ${isUnlocked ? 'cursor-pointer hover:scale-105 active:scale-95' : 'opacity-50 grayscale cursor-not-allowed'} ${isActive ? 'active-node scale-105 ring-4 ring-white' : ''}`;
+                
+                let badgeHTML = '';
+                if (isCompleted) {
+                    badgeHTML = '<span class="absolute -top-3 -right-3 bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white"><i class="fa-solid fa-check"></i></span>';
+                } else if (isUnlocked && !isCompleted) {
+                    badgeHTML = '<span class="absolute -top-3 -right-3 bg-yellow-400 text-indigo-950 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-white animate-bounce"><i class="fa-solid fa-star"></i></span>';
+                } else {
+                    badgeHTML = '<span class="absolute -top-3 -right-3 bg-gray-700 text-gray-300 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-lg border-2 border-gray-500"><i class="fa-solid fa-lock text-xs"></i></span>';
+                }
+
+                card.innerHTML = `
+                    ${badgeHTML}
+                    <div class="text-4xl my-2 animate-float">${planet.icon}</div>
+                    <div>
+                        <h4 class="font-extrabold text-white text-base md:text-lg drop-shadow">${planet.name}</h4>
+                        <p class="text-xs text-white/90 mt-1 line-clamp-2">${planet.description}</p>
+                    </div>
+                    <div class="mt-3 w-full">
+                        <span class="inline-block w-full py-1.5 px-3 bg-black/30 backdrop-blur-sm rounded-xl text-xs font-bold text-white shadow-inner">
+                            ${isCompleted ? 'Selesai ✨' : (isUnlocked ? 'Mulai Misi 🚀' : 'Terkunci 🔒')}
+                        </span>
+                    </div>
+                `;
+
+                if (isUnlocked) {
+                    card.onclick = () => selectPlanet(index);
+                }
+                planetMapContainer.appendChild(card);
+            });
+        }
+
+        function selectPlanet(index) {
+            currentPlanetIndex = index;
+            currentQuestionIndex = 0;
+            mapScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        function backToMap() {
+            quizScreen.classList.add('hidden');
+            mapScreen.classList.remove('hidden');
+            renderMap();
+        }
+
+        function loadQuestion() {
+            const planet = planetsData[currentPlanetIndex];
+            const qData = planet.questions[currentQuestionIndex];
+
+            document.getElementById('quizPlanetIcon').innerText = planet.icon;
+            document.getElementById('quizPlanetTitle').innerText = `Planet ${planet.name}`;
+            document.getElementById('quizStepIndicator').innerText = `Pertanyaan ${currentQuestionIndex + 1} dari ${planet.questions.length}`;
+            document.getElementById('quizQuestion').innerText = qData.q;
+
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "p-4 bg-indigo-900/90 hover:bg-indigo-800 border-2 border-indigo-600 hover:border-cyan-400 rounded-2xl text-white font-bold text-base shadow-lg transition transform hover:scale-102 active:scale-95 text-left flex items-center space-x-3";
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-extrabold border border-cyan-400">${String.fromCharCode(65 + idx)}</span>
+                    <span class="flex-1">${opt}</span>
+                `;
+                btn.onclick = () => checkAnswer(idx, qData.answer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            const modal = document.getElementById('feedbackModal');
+            const card = document.getElementById('feedbackCard');
+            const icon = document.getElementById('feedbackIcon');
+            const title = document.getElementById('feedbackTitle');
+            const text = document.getElementById('feedbackText');
+
+            modal.classList.remove('hidden');
+
+            if (selected === correct) {
+                score += 10;
+                scoreDisplay.innerText = score;
+                card.className = "bg-indigo-900 border-4 border-emerald-400 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl transform transition scale-100";
+                icon.innerText = "🌟";
+                title.innerText = "Benar Sekali! 🎉";
+                title.className = "text-2xl font-black text-emerald-300";
+                text.innerText = "Hebat! Kamu mendapatkan +10 Bintang!";
+                
+                // Trigger celebratory confetti for correct answer
+                confetti({
+                    particleCount: 60,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                // Advance question or planet
+                const planet = planetsData[currentPlanetIndex];
+                currentQuestionIndex++;
+
+                if (currentQuestionIndex >= planet.questions.length) {
+                    // Planet cleared, unlock next planet
+                    if (currentPlanetIndex + 1 > unlockedPlanets && unlockedPlanets < planetsData.length) {
+                        unlockedPlanets = currentPlanetIndex + 1;
+                    }
+                }
+            } else {
+                card.className = "bg-indigo-900 border-4 border-rose-400 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl transform transition scale-100";
+                icon.innerText = "💡";
+                title.innerText = "Hampir Tepat! 💪";
+                title.className = "text-2xl font-black text-rose-300";
+                text.innerText = "Jangan menyerah, ayo coba lagi di misi berikutnya!";
+            }
+        }
+
+        function closeFeedback() {
+            document.getElementById('feedbackModal').classList.add('hidden');
+            const planet = planetsData[currentPlanetIndex];
+
+            if (currentQuestionIndex >= planet.questions.length) {
+                // Check if all planets are completed
+                if (currentPlanetIndex >= planetsData.length - 1) {
+                    quizScreen.classList.add('hidden');
+                    victoryScreen.classList.remove('hidden');
+                    document.getElementById('finalScore').innerText = score;
+                    confetti({
+                        particleCount: 150,
+                        spread: 100,
+                        origin: { y: 0.5 }
+                    });
+                } else {
+                    backToMap();
+                }
+            } else {
+                loadQuestion();
+            }
+        }
+
+        function resetGame() {
+            score = 0;
+            currentPlanetIndex = 0;
+            currentQuestionIndex = 0;
+            unlockedPlanets = 1;
+            scoreDisplay.innerText = score;
+
+            victoryScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            mapScreen.classList.add('hidden');
+            welcomeScreen.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
